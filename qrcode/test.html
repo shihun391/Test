@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>闪动提示</title>
+    <style>
+        *{ margin:0; padding:0;}
+
+        .box{color: #000}
+
+        .red{color:#d00;}
+    </style>
+    <script type="text/javascript" src="jquery-1.11.3.min.js"></script>
+    <script>
+        function shake(element,className,times){
+            var i = 0,
+                    t = false ,
+                    o = element.attr("class"),
+                    c = "",
+                    times = times||2;
+
+            if(t) return;
+
+            t = setInterval(function(){
+                i++;
+                c = i%2 ? o + ' ' + className : o;
+                element.attr("class",c);
+
+                if(i==2*times){
+                    clearInterval(t);
+                    element.removeClass(className);
+                }
+            },200);
+
+        };
+
+
+        $(function(){
+            //domready 就闪动
+            shake($(".box"),"red",3);
+        });
+    </script>
+</head>
+<body>
+<div class="box">打开就闪动</div>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>变化</title>
+    <style>
+        *{
+            margin: 0;
+            padding:0;
+        }
+        .div_box{
+            height: 100%;
+            width: 100%;
+            position: relative;
+        }
+        .handle_mark{
+            font-size: 60px;
+        }
+        .div_box >div:not(#div_window)>div{
+            margin:0 auto;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .landscape .div_box>div:not(#div_window){
+            float:left;
+            width: 33.33%;
+            height: 100%;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .portrait .div_box>div:not(#div_window){
+            text-align: center;
+            height: 33.33%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .portrait .div_box #div_window #div_window_box,.portrait .div_box>div:not(#div_window)>div{
+            display: block;
+            /* Safari */
+            -webkit-transform: rotate(90deg);
+
+            /* Firefox */
+            -moz-transform: rotate(90deg);
+
+            /* Internet Explorer */
+            filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+        }
+        .portrait .div_box #div_window.div_window{
+            right:0px;
+        }
+        .portrait .div_box #div_window.div_window{
+            left:0px;
+        }
+        .div_box .div_add{
+            background: rgb(0,255,0);
+        }
+        .div_box .div_stop{
+            background: rgb(255,0,0);
+        }
+        .div_box .div_minus{
+            background: rgb(255,255,0);
+        }
+        .div_box #div_window{
+            width: 100px;
+            height: 42px;
+            border:none;
+            position: absolute;
+            top:0px;
+            left:0px;
+            clear: both;
+            padding:5px;
+        }
+        .div_box #div_window #div_window_box{
+            width: 98px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+        }
+    </style>
+
+</head>
+<body>
+<div class="div_box">
+    <div class="div_add" id="div_add"><div id="div_add_txt">SPEED <a class="handle_mark">+</a></div></div>
+    <div class="div_stop" id="div_stop"><div id="div_stop_txt">STOP</div></div>
+    <div class="div_minus" id="div_minus"><div id="div_minus_txt">SPEED <a class="handle_mark">-</a></div></div>
+    <div class="div_window" id="div_window">
+        <div class="div_window_box" id="div_window_box">
+            <div class="leftSpeed"><span class="leftSpeedName">Left:</span><span class="leftSpeedValue" id="leftSpeedValue">0</span></div>
+            <div class="rightSpeed"><span class="rightSpeedName">Right:</span><span class="rightSpeedValue" id="rightSpeedValue">0</span></div>
+        </div>
+    </div>
+</div>
+<script src="jquery-1.7.1.js"></script>
+<script>
+    (function(){
+        var str1=window.location.search;
+        var VID=parseInt(str1.split("=")[1]);
+        var supportOrientation = (typeof window.orientation === 'number' &&
+        typeof window.onorientationchange === 'object');
+
+        var init = function(){
+            var htmlNode = document.body.parentNode,
+                    orientation;
+            var updateOrientation = function(){
+                if(supportOrientation){
+                    orientation = window.orientation;
+                    switch(orientation){
+                        case 90:
+                        case -90:
+                            orientation = 'landscape';
+                            break;
+                        default:
+                            orientation = 'portrait';
+                            break;
+                    }
+                }else{
+                    orientation = (window.innerWidth > window.innerHeight) ? 'landscape' : 'portrait';
+                }
+                htmlNode.setAttribute('class',orientation);
+            };
+
+            if(supportOrientation){
+                window.addEventListener('orientationchange',updateOrientation,false);
+            }else{
+                //监听resize事件
+                window.addEventListener('resize',updateOrientation,false);
+            }
+
+            updateOrientation();
+        };
+
+        window.addEventListener('DOMContentLoaded',init,false);
+        $.ajax({
+            url: "../AGVS/SetAGVMode",
+            type: "POST",
+            data:  JSON.stringify({
+                "VID":VID,
+                "Mode":2
+            }),
+            cache: false,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                if(result["ResultCode"]==0){
+
+                    /*角度的变换*/
+
+                    //第一次加载
+                    var beta;
+                    var gamma;
+                    var div_add = document.getElementById("div_add");
+                    var div_stop = document.getElementById("div_stop");
+                    var div_minus = document.getElementById("div_minus");
+                    var leftSpeedValue = document.getElementById("leftSpeedValue");
+                    var rightSpeedValue = document.getElementById("rightSpeedValue");
+                    var speedValue_num=0;
+                    var leftSpeedValue_num=parseInt(leftSpeedValue.innerHTML);
+                    var rightSpeedValue_num=parseInt(rightSpeedValue.innerHTML);
+
+
+                    function loadInfo() {
+                        if (window && window.DeviceOrientationEvent){
+                            window.addEventListener("deviceorientation", orientationHandler, false);
+                        }else{
+                            document.querySelector('body').innerHTML = '你的浏览器不支持哦';
+                        }
+
+                    }
+                    loadInfo();
+
+                    function orientationHandler(event) {
+                        beta=event.beta || 0;
+                        gamma=event.gamma || 0;
+                        if((gamma<0)&&(gamma>-90)){
+                            if (beta < 0&&beta>=-90) {
+                                leftSpeedValue_num=parseInt(((90+beta)/90)*speedValue_num);
+                                rightSpeedValue_num=speedValue_num;
+                                leftSpeedValue.innerHTML=leftSpeedValue_num;
+                                rightSpeedValue.innerHTML=speedValue_num;
+                            } else if (beta > 0&&beta<=90) {
+                                leftSpeedValue_num=speedValue_num;
+                                rightSpeedValue_num=parseInt(((90-beta)/90)*speedValue_num);
+                                leftSpeedValue.innerHTML=speedValue_num;
+                                rightSpeedValue.innerHTML=rightSpeedValue_num;
+                            } else if(beta==0){
+                                leftSpeedValue_num=speedValue_num;
+                                rightSpeedValue_num=speedValue_num;
+                                leftSpeedValue.innerHTML=speedValue_num;
+                                rightSpeedValue.innerHTML=speedValue_num;
+                            }
+                        }else if((gamma>0)&&(gamma<90)){
+                            if((beta<-90)&&(beta>-180)){
+                                leftSpeedValue_num=parseInt(((-beta-90)/90)*speedValue_num);
+                                rightSpeedValue_num=speedValue_num;
+                                leftSpeedValue.innerHTML=leftSpeedValue_num;
+                                rightSpeedValue.innerHTML=speedValue_num;
+                            }else if((beta<180)&&(beta>90)){
+                                leftSpeedValue_num=speedValue_num;
+                                rightSpeedValue_num=parseInt(((beta-90)/90)*speedValue_num);
+                                leftSpeedValue.innerHTML=speedValue_num;
+                                rightSpeedValue.innerHTML=rightSpeedValue_num;
+                            }else if((beta==180)||(beta==-180)){
+                                leftSpeedValue_num=speedValue_num;
+                                rightSpeedValue_num=speedValue_num;
+                                leftSpeedValue.innerHTML=speedValue_num;
+                                rightSpeedValue.innerHTML=speedValue_num;
+                            }
+                        }
+                    }
+                    function AGVContrl() {
+                        var data1={
+                            "VID":VID,
+                            "left":parseInt(leftSpeedValue_num),
+                            "right":parseInt(rightSpeedValue_num)
+                        };
+                        var data2=JSON.stringify(data1);
+                        $.ajax({
+                            url: "../AGVS/SetSpeed",
+                            type: "POST",
+                            data: data2,
+                            cache: false,
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function (result) {
+                                console.log(result);
+                            },
+                            error:function (XHR) {
+                                console.log(XHR);
+                            },
+                            complete: function (XHR) {
+                                XHR = null;
+                                console.log("get_data_layout完成了");
+                                setTimeout(function () {
+                                    AGVContrl();
+                                }, 100);
+                            }
+                        });
+                    }
+                    AGVContrl();
+
+                    /*块的点击触发事件*/
+                    div_add.ontouchstart = function(e){
+                        if(speedValue_num<100){
+                            speedValue_num+=10;
+                        }
+
+                        speedValue.innerHTML=speedValue_num;
+                    };
+                    div_stop.ontouchstart = function(e){
+                        speedValue_num=0;
+                        speedValue.innerHTML=0;
+                    };
+                    div_minus.ontouchstart = function(e){
+                        if(speedValue_num>0){
+                            speedValue_num-=10;
+                        }
+
+                        speedValue.innerHTML=speedValue_num;
+                    };
+                    /*   div.ontouchmove = function(e){
+                     //可为touchstart、touchmove事件加上preventDefault从而阻止触摸时浏览器的缩放、滚动条滚动等
+                     e.preventDefault();
+                     };
+                     div.ontouchup = function(e){
+                     //nothing to do
+                     };*/
+                }
+            },
+            error:function (XHR) {
+                console.log(XHR);
+            },
+            complete: function (XHR) {
+                XHR = null;
+            }
+        });
+
+    })();
+
+</script>
+</body>
+</html>

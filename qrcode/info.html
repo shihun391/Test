@@ -1,0 +1,107 @@
+<!DOCTYPE>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>变化</title>
+    <style>
+        *{
+            margin: 0;
+            padding:0;
+        }
+        html,body,.content_box{
+            height: 100%;
+        }
+        .content_box{
+            padding:5% 0;
+            background: rgb(245,245,245);
+        }
+        .div_box{
+            height: 18%;
+            font:normal 24px Arial;
+        }
+        .button_box{
+            height: 18%;
+        }
+    </style>
+    <link rel="stylesheet" href="bootstrap.min.css">
+
+</head>
+<body>
+<div class="container content_box">
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 VID_name">VID:</div>
+        <div class="col-xs-offset-2 col-xs-4 VID_value"></div>
+    </div>
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 LocatedTag_name">LocatedTag:</div>
+        <div class="col-xs-offset-2 col-xs-4 LocatedTag_value"></div>
+    </div>
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 TargetTag_name">TargetTag:</div>
+        <div class="col-xs-offset-2 col-xs-4 TargetTag_value"></div>
+    </div>
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 BranchDirection_name">Direction:</div>
+        <div class="col-xs-offset-2 col-xs-4 BranchDirection_value"></div>
+    </div>
+    <div class="button_box">
+        <button class="btn btn-primary btn_manual col-xs-offset-1 col-xs-4">MANUAL</button>
+        <button class="btn btn-primary btn_auto col-xs-offset-1 col-xs-4">AUTO</button>
+    </div>
+</div>
+<script src="jquery-1.7.1.js"></script>
+<script>
+    (function(){
+        var session = window.sessionStorage;
+
+        var str1=window.location.search;
+        var VID=parseInt(str1.split("=")[1]);
+        session.setItem("VID",VID);
+        $(".VID_value").html(VID);
+        $.ajax({
+            url: "../AGVS/GetAgvData",
+            type: "POST",
+            dataType: 'json',
+            jsonp: "callback",
+            async: true,
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify({
+                "VID": VID
+            }), //请求数据
+            beforeSend: function (json) {
+
+            },
+            success: function (json) {
+                if(json["ResultCode"]==0){
+
+
+                console.log("before");
+                $(".VID_value").html(json["Result"]["VID"]);
+                $(".LocatedTag_value").html(json["Result"]["LocatedTag"]);
+                $(".TargetTag_value").html(json["Result"]["TargetTag"]);
+                $(".BranchDirection_value").html(json["Result"]["BranchDirection"]==-1?"left":"right");
+                $(".btn_manual").off().on("click",function () {
+                    window.open("manual.html", "_self");
+                });
+                $(".btn_auto").off().on("click",function () {
+                    window.open("auto.html", "_self");
+                });
+                }
+            },
+            error: function (shr) {
+
+            },
+            complete: function (XHR) {
+
+            }
+        });
+    })();
+
+</script>
+</body>
+</html>

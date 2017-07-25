@@ -1,0 +1,193 @@
+<!DOCTYPE>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <title>变化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body, .content_box {
+            height: 100%;
+        }
+
+        .content_box {
+            height: 100%;
+            padding: 10% 0;
+            position: relative;
+            background: rgb(245, 245, 245);
+        }
+
+        .div_box {
+            height: 14%;;
+            font: normal 24px Arial;
+        }
+        .set_btn{
+            border-radius: 3px;
+        }
+        .BranchDirection_value_set{
+            paddin-left:20%;
+        }
+        .div_close {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            font: bold 20px Arial;
+            right: 0px;
+            top: 0px;
+        }
+    </style>
+    <link rel="stylesheet" href="bootstrap.min.css">
+
+</head>
+<body>
+<div class="container content_box">
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 VID_name">VID:</div>
+        <div class="col-xs-offset-2 col-xs-4 VID_value"></div>
+    </div>
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 LocatedTag_name">LocatedTag:</div>
+        <div class="col-xs-offset-2 col-xs-4 LocatedTag_value"></div>
+    </div>
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 BranchDirection_name">Direction:</div>
+        <div class="col-xs-offset-2 col-xs-4 BranchDirection_value"></div>
+    </div>
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 BranchDirection_name_set">TargetTag:</div>
+        <input type="text" class="col-xs-offset-2 col-xs-4 BranchDirection_value_set">
+    </div>
+    <div class="row div_box">
+        <div class="col-xs-offset-1 col-xs-4 BranchDirection_name_set">Direction:</div>
+        <div class="col-xs-offset-1 col-xs-5 BranchDirection_value_set">
+            <button class="left_btn col-xs-offset-1 col-xs-5 btn btn-primary text-left">Left</button>
+            <button class="right_btn col-xs-offset-1 col-xs-5 btn btn-default text-left">Right</button>
+        </div>
+    </div>
+    <div class="row div_box">
+        <button class="col-xs-offset-4 col-xs-4 set_btn btn-primary">SET</button>
+    </div>
+    <div class="div_close">×</div>
+</div>
+<script src="jquery-1.7.1.js"></script>
+<script>
+    (function () {
+        var session = window.sessionStorage;
+        var VID = session.getItem("VID");
+        console.log(VID);
+        var der=-1;
+        var patrn = /^[0-9]*$/;
+        $.ajax({
+            url: "../AGVS/GetAgvData",
+            type: "POST",
+            dataType: 'json',
+            jsonp: "callback",
+            async: true,
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify({
+                "VID": VID
+            }), //请求数据
+            beforeSend: function (json) {
+
+            },
+            success: function (json) {
+                console.log("before");
+                if(json["ResultCode"]==0){
+                    $(".VID_value").html(json["Result"]["VID"]);
+                    $(".LocatedTag_value").html(json["Result"]["LocatedTag"]);
+                    $(".BranchDirection_value").html(json["Result"]["BranchDirection"]==-1?"left":"right");
+                }
+            },
+            error: function (shr) {
+
+            },
+            complete: function (XHR) {
+
+            }
+        });
+        $(".left_btn").off().on("click",function () {
+            if($(".right_btn").hasClass("btn-primary")){
+
+                $(".right_btn").addClass("btn-default");
+                $(".right_btn").removeClass("btn-primary");
+                $(this).removeClass("btn-default");
+            }
+            $(this).addClass("btn-primary");
+            der=-1;
+        });
+        $(".right_btn").off().on("click",function () {
+            if($(".left_btn").hasClass("btn-primary")){
+                $(".left_btn").addClass("btn-default");
+                $(".left_btn").removeClass("btn-primary");
+                $(this).removeClass("btn-default");
+            }
+            $(this).addClass("btn-primary");
+            der=1;
+        });
+        /*设置操作模式按钮*/
+        $(".set_btn").off().on("click", function () {
+            if(patrn.test($(".BranchDirection_value").val())){
+                $.ajax({
+                    url: "../AGVS/SetAGVMode",
+                    type: "POST",
+                    data: JSON.stringify({
+                        "VID": VID,
+                        "Mode": 1
+                    }),
+                    cache: false,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (result) {
+                        if (result["ResultCode"] == 0) {
+                            $.ajax({
+                                url: "../AGVS/SetTargetTag",
+                                type: "POST",
+                                dataType: 'json',
+                                jsonp: "callback",
+                                async: true,
+                                contentType: "application/json; charset=utf-8",
+                                data: JSON.stringify({
+                                    "VID": VID,
+                                    "TargetTag":parseInt($(".BranchDirection_value_set").val()),
+                                    "BranchDirection":der
+                                }), //请求数据
+                                beforeSend: function (json) {
+
+                                },
+                                success: function (json) {
+                                    window.open("auto.html", "_self");
+                                },
+                                error: function (shr) {
+
+                                },
+                                complete: function (XHR) {
+
+                                }
+
+                            });
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+
+
+            }
+        });
+        $(".div_close").off().on("click", function () {
+            window.open("info.html?ID=" + VID, "_self");
+        });
+    })();
+
+</script>
+</body>
+</html>
